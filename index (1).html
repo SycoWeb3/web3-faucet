@@ -1,0 +1,32 @@
+<script src="https://cdn.jsdelivr.net/npm/web3@1.9.0/dist/web3.min.js"></script>
+<script>
+  let web3;
+  let faucetContract;
+
+  // Your faucet contract address
+  const faucetAddress = "0xE85c7C0530D4A491a418a63d91f3De417911F135";
+
+  // Paste your faucet ABI here
+  const faucetABI = [/* your ABI here */];
+
+  async function connectWallet() {
+    if (window.ethereum) {
+      web3 = new Web3(window.ethereum);
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      faucetContract = new web3.eth.Contract(faucetABI, faucetAddress);
+      document.getElementById('status').innerText = "Wallet connected";
+    } else {
+      alert("Please install MetaMask!");
+    }
+  }
+
+  async function claimTokens() {
+    const accounts = await web3.eth.getAccounts();
+    try {
+      await faucetContract.methods.claim().send({ from: accounts[0] });
+      alert("Tokens claimed successfully!");
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  }
+</script>
