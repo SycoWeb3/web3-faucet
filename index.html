@@ -1,32 +1,45 @@
-<script src="https://cdn.jsdelivr.net/npm/web3@1.9.0/dist/web3.min.js"></script>
-<script>
-  let web3;
-  let faucetContract;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Faucet DApp</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.9.0/dist/web3.min.js"></script>
+</head>
+<body>
+  <h1>🪙 Faucet DApp</h1>
+  <p id="status">Wallet not connected</p>
+  <button onclick="connectWallet()">Connect Wallet</button>
+  <button onclick="claimTokens()">Claim Tokens</button>
 
-  // Your faucet contract address
-  const faucetAddress = "0xE85c7C0530D4A491a418a63d91f3De417911F135";
+  <script>
+    let web3;
+    let faucetContract;
 
-  // Paste your faucet ABI here
-  const faucetABI = [/* your ABI here */];
+    const faucetAddress = "0xE85c7C0530D4A491a418a63d91f3De417911F135";
 
-  async function connectWallet() {
-    if (window.ethereum) {
-      web3 = new Web3(window.ethereum);
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      faucetContract = new web3.eth.Contract(faucetABI, faucetAddress);
-      document.getElementById('status').innerText = "Wallet connected";
-    } else {
-      alert("Please install MetaMask!");
+    const faucetABI = [ /* paste the actual ABI array here */ ];
+
+    async function connectWallet() {
+      if (window.ethereum) {
+        web3 = new Web3(window.ethereum);
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        faucetContract = new web3.eth.Contract(faucetABI, faucetAddress);
+        document.getElementById('status').innerText = "✅ Wallet connected";
+      } else {
+        alert("Please install MetaMask!");
+      }
     }
-  }
 
-  async function claimTokens() {
-    const accounts = await web3.eth.getAccounts();
-    try {
-      await faucetContract.methods.claim().send({ from: accounts[0] });
-      alert("Tokens claimed successfully!");
-    } catch (err) {
-      alert("Error: " + err.message);
+    async function claimTokens() {
+      const accounts = await web3.eth.getAccounts();
+      try {
+        await faucetContract.methods.claim().send({ from: accounts[0] });
+        alert("✅ Tokens claimed successfully!");
+      } catch (err) {
+        alert("❌ Error: " + err.message);
+      }
     }
-  }
-</script>
+  </script>
+</body>
+</html>
+
