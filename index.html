@@ -1,80 +1,220 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
   <meta charset="UTF-8">
-  <title>Faucet DApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🪙 Faucet DApp</title>
   <script src="https://cdn.jsdelivr.net/npm/web3@1.9.0/dist/web3.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .light {
+      background: #f0f0f0;
+      color: #111;
+    }
+
+    .dark {
+      background: #111;
+      color: #f0f0f0;
+    }
+
+    .logo {
+      font-size: 3em;
+    }
+
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      background: #4CAF50;
+      color: white;
+    }
+
+    #spinner {
+      display: none;
+      margin: 20px auto;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #4CAF50;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .toggle-btn {
+      background: #222;
+      color: white;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h1>🪙 Faucet DApp</h1>
-  <p id="status">Wallet not connected</p>
+  <button class="toggle-btn" onclick="toggleTheme()">🌗</button>
+  <div class="logo">🪙 Faucet DApp</div>
+  <p id="status">🔌 Wallet not connected</p>
   <button onclick="connectWallet()">Connect Wallet</button>
   <button onclick="claimTokens()">Claim Tokens</button>
-  <p id="balance">Your Token Balance: -</p>
+
+  <div id="spinner"></div>
 
   <script>
+    const faucetAddress = "0xE85c7C0530D4A491a418a63d91f3De417911F135";
+    const faucetABI = YOUR_ABI_HERE;
+
     let web3;
     let faucetContract;
-    let tokenContract;
-    let userAccount;
 
-    const faucetAddress = "0xE85c7C0530D4A491a418a63d91f3De417911F135";
-
-    const faucetABI = [/* your fixed faucet ABI here */];
-
-    const erc20ABI = [
-      {
-        "constant": true,
-        "inputs": [{"name": "_owner", "type": "address"}],
-        "name": "balanceOf",
-        "outputs": [{"name": "balance", "type": "uint256"}],
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "decimals",
-        "outputs": [{"name": "", "type": "uint8"}],
-        "type": "function"
-      }
-    ];
+    const toggleTheme = () => {
+      const html = document.documentElement;
+      html.classList.toggle("dark");
+      html.classList.toggle("light");
+    };
 
     async function connectWallet() {
       if (window.ethereum) {
         web3 = new Web3(window.ethereum);
         await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const accounts = await web3.eth.getAccounts();
-        userAccount = accounts[0];
-
         faucetContract = new web3.eth.Contract(faucetABI, faucetAddress);
-
-        // Fetch token address from faucet contract
-        const tokenAddress = await faucetContract.methods.token().call();
-        tokenContract = new web3.eth.Contract(erc20ABI, tokenAddress);
-
-        document.getElementById('status').innerText = `✅ Wallet connected: ${userAccount}`;
-        getBalance();
+        document.getElementById('status').innerText = "✅ Wallet connected";
       } else {
-        alert("Please install MetaMask!");
+        alert("🦊 Please install MetaMask");
       }
-    }
-
-    async function getBalance() {
-      const rawBalance = await tokenContract.methods.balanceOf(userAccount).call();
-      const decimals = await tokenContract.methods.decimals().call();
-      const readableBalance = rawBalance / (10 ** decimals);
-      document.getElementById('balance').innerText = `Your Token Balance: ${readableBalance}`;
     }
 
     async function claimTokens() {
+      const accounts = await web3.eth.getAccounts();
+      const spinner = document.getElementById('spinner');
+      spinner.style.display = 'block';
       try {
-        await faucetContract.methods.claim().send({ from: userAccount });
-        alert("✅ Tokens claimed successfully!");
-        getBalance(); // Refresh balance
+        await faucetContract.methods.claim().send({ from: accounts[0] });
+        alert("✅ Tokens claimed!");
       } catch (err) {
         alert("❌ Error: " + err.message);
       }
+      spinner.style.display = 'none';
     }
+
+    // Paste ABI directly here
+    const faucetABI = [
+      {
+        "inputs": [],
+        "name": "claim",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "refill",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "setDrip",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_token",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "name": "claimed",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "dripAmount",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "token",
+        "outputs": [
+          {
+            "internalType": "contract IERC20",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ];
   </script>
 </body>
 </html>
