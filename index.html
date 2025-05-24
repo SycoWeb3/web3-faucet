@@ -10,134 +10,67 @@
   <p id="status">Wallet not connected</p>
   <button onclick="connectWallet()">Connect Wallet</button>
   <button onclick="claimTokens()">Claim Tokens</button>
+  <p id="balance">Your Token Balance: -</p>
 
   <script>
     let web3;
     let faucetContract;
+    let tokenContract;
+    let userAccount;
 
     const faucetAddress = "0xE85c7C0530D4A491a418a63d91f3De417911F135";
 
-    const faucetABI =  [
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_token",
-				"type": "address"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"inputs": [],
-		"name": "claim",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "claimed",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "dripAmount",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "owner",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			}
-		],
-		"name": "refill",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			}
-		],
-		"name": "setDrip",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "token",
-		"outputs": [
-			{
-				"internalType": "contract IERC20",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
-];
+    const faucetABI = [/* your fixed faucet ABI here */];
+
+    const erc20ABI = [
+      {
+        "constant": true,
+        "inputs": [{"name": "_owner", "type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"name": "balance", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [{"name": "", "type": "uint8"}],
+        "type": "function"
+      }
+    ];
 
     async function connectWallet() {
       if (window.ethereum) {
         web3 = new Web3(window.ethereum);
         await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const accounts = await web3.eth.getAccounts();
+        userAccount = accounts[0];
+
         faucetContract = new web3.eth.Contract(faucetABI, faucetAddress);
-        document.getElementById('status').innerText = "✅ Wallet connected";
+
+        // Fetch token address from faucet contract
+        const tokenAddress = await faucetContract.methods.token().call();
+        tokenContract = new web3.eth.Contract(erc20ABI, tokenAddress);
+
+        document.getElementById('status').innerText = `✅ Wallet connected: ${userAccount}`;
+        getBalance();
       } else {
         alert("Please install MetaMask!");
       }
     }
 
+    async function getBalance() {
+      const rawBalance = await tokenContract.methods.balanceOf(userAccount).call();
+      const decimals = await tokenContract.methods.decimals().call();
+      const readableBalance = rawBalance / (10 ** decimals);
+      document.getElementById('balance').innerText = `Your Token Balance: ${readableBalance}`;
+    }
+
     async function claimTokens() {
-      const accounts = await web3.eth.getAccounts();
       try {
-        await faucetContract.methods.claim().send({ from: accounts[0] });
+        await faucetContract.methods.claim().send({ from: userAccount });
         alert("✅ Tokens claimed successfully!");
+        getBalance(); // Refresh balance
       } catch (err) {
         alert("❌ Error: " + err.message);
       }
@@ -145,4 +78,3 @@
   </script>
 </body>
 </html>
-
